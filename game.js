@@ -8,7 +8,7 @@ class Vector {
 
   plus(vector) {
     if (vector.constructor !== Vector) {
-      throw "Можно прибавлять к вектору только вектор типа Vector";
+      throw new Error("Можно прибавлять к вектору только вектор типа Vector");
     }
     return new Vector(this.x + vector.x, this.y + vector.y);
   }
@@ -18,6 +18,7 @@ class Vector {
   }
 }
 
+///////////////Проверка
 const start = new Vector(30, 50);
 const moveTo = new Vector(5, 10);
 const finish = start.plus(moveTo.times(2));
@@ -28,16 +29,15 @@ console.log(`Текущее расположение: ${finish.x}:${finish.y}`);
 class Actor {
   constructor(pos = new Vector(0, 0), size = new Vector(1, 1), speed = new Vector(0, 0)) {
     if (pos.constructor !== Vector) {
-      throw "pos не типа Vector";
+      throw new Error("pos не типа Vector");
     } else if (size.constructor !== Vector) {
-      throw "size не типа Vector";
+      throw new Error("size не типа Vector");
     } else if (speed.constructor !== Vector) {
-      throw "speed не типа Vector";
+      throw new Error("speed не типа Vector");
     }
     this.pos = pos;
     this.size = size;
     this.speed = speed;
-    //this.act();
   }
   
   act() {}
@@ -63,17 +63,18 @@ class Actor {
   }
 
   isIntersect(movingActor) {
-    if (movingActor.constructor !== Actor || !movingActor) {
-      throw "Введите movingActor типа Actor";
-    } else if (movingActor === this) {
+      if (movingActor.constructor !== Actor || !movingActor) {
+        throw new Error("Введите movingActor типа Actor");
+      } else if (movingActor === this) {
+        return false;
+      } else if ((movingActor.left < this.right && movingActor.right > this.left) && (movingActor.bottom > this.top && movingActor.top < this.bottom)) {
+        return true;
+      }
       return false;
-    } else if ((movingActor.left < this.right && movingActor.right > this.left) && (movingActor.bottom > this.top && movingActor.top < this.bottom)) {
-      return true;
-    }
-    return false;
   }
 }
 
+///////////////Проверка
 const items = new Map();
 const player = new Actor();
 items.set('Игрок', player);
@@ -102,3 +103,107 @@ movePlayer(10, 10);
 items.forEach(status);
 movePlayer(5, -5);
 items.forEach(status);
+
+
+
+class Level {
+  constructor(grid, actors) {
+    this.grid = grid;
+    this.actors = actors;
+    this.status = null;
+    this.finishDelay = 1;
+  }
+
+  get player() {
+    for (let i = 0 ; i < this.actors.length ; i++) {
+      if (this.actors[i].type === 'player') return this.actors[i];
+    }
+  } 
+
+  get height() {
+    if (!this.grid) {
+      return 0;
+    } else {
+      return this.grid.length;
+    }
+  }
+
+  get width() {
+    if (!this.grid) {
+      return 0;
+    } else {
+      let max = 0;
+      this.grid.forEach(function(line) {
+        if (line.length > max) {
+          max = line.length;
+        }
+      });
+      return max;
+    }
+  
+  }
+
+  isFinished() {
+    return (this.status !== null && this.finishDelay < 0) ? true : false;
+  }
+
+  actorAt(actor) {
+    if (actor.constructor !== Actor || !actor) {
+      throw new Error("Введите actor типа Actor");
+    }
+    for (let i = 0 ; i < this.actors.length ; i++) {
+       if ( actor.isIntersect(this.actors[i]) ) {
+         return this.actors[i];
+       }
+     }
+     return undefined;
+  }
+
+  obstacleAt(pos, size) {
+    if (pos.constructor !== Vector) {
+      throw "pos не типа Vector";
+    } else if (size.constructor !== Vector) {
+      throw "size не типа Vector";
+    }
+  }
+}
+
+///////////////Проверка
+/*
+const grid = [
+  [undefined, undefined],
+  ['wall', 'wall']
+];
+
+function MyCoin(title) {
+  this.type = 'coin';
+  this.title = title;
+}
+MyCoin.prototype = Object.create(Actor);
+MyCoin.constructor = MyCoin;
+
+const goldCoin = new MyCoin('Золото');
+const bronzeCoin = new MyCoin('Бронза');
+const player = new Actor();
+const fireball = new Actor();
+
+const level = new Level(grid, [ goldCoin, bronzeCoin, player, fireball ]);
+
+level.playerTouched('coin', goldCoin);
+level.playerTouched('coin', bronzeCoin);
+
+if (level.noMoreActors('coin')) {
+  console.log('Все монеты собраны');
+  console.log(`Статус игры: ${level.status}`);
+}
+
+const obstacle = level.obstacleAt(new Vector(1, 1), player.size);
+if (obstacle) {
+  console.log(`На пути препятствие: ${obstacle}`);
+}
+
+const otherActor = level.actorAt(player);
+if (otherActor === fireball) {
+  console.log('Пользователь столкнулся с шаровой молнией');
+}
+*/
