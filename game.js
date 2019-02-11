@@ -63,9 +63,10 @@ class Actor {
   }
 
   isIntersect(movingActor) {
-      if (movingActor.constructor !== Actor || !movingActor) {
-        throw new Error("Введите movingActor типа Actor");
-      } else if (movingActor === this) {
+    if (movingActor.constructor.name !== "Actor" || !movingActor) {
+      throw new Error("Введите movingActor типа Actor");
+    }
+     if (movingActor === this) {
         return false;
       } else if ((movingActor.left < this.right && movingActor.right > this.left) && (movingActor.bottom > this.top && movingActor.top < this.bottom)) {
         return true;
@@ -148,23 +149,65 @@ class Level {
   }
 
   actorAt(actor) {
-    if (actor.constructor !== Actor || !actor) {
+    if (actor.constructor.name !== "Actor" || !actor) {
       throw new Error("Введите actor типа Actor");
     }
+    if (!this.actors) return undefined;
+    if (this.actors.length <= 1) return undefined;
+    
     for (let i = 0 ; i < this.actors.length ; i++) {
-       if ( actor.isIntersect(this.actors[i]) ) {
-         return this.actors[i];
-       }
-     }
+      if ( this.actors[i].isIntersect(actor) ) return this.actors[i];
+    }
      return undefined;
   }
 
   obstacleAt(pos, size) {
-    if (pos.constructor !== Vector) {
-      throw "pos не типа Vector";
-    } else if (size.constructor !== Vector) {
-      throw "size не типа Vector";
+    if (pos.constructor.name !== 'Vector') {
+      throw new Error("pos не типа Vector");
+    } else if (size.constructor.name !== 'Vector') {
+      throw new Error("size не типа Vector");
     }
+    if (pos.y + size.y > this.height) return 'lava';
+    if (pos.x + size.x > this.width || pos.y < 0 || pos.x < 0 || (pos.x + size.x) * (pos.y + size.y) > this.height * this.width) return 'wall';
+    for (let i = 0 ; i < this.grid.length ; i++) {
+      for (let y = 0 ; y < this.grid[i].length ; y++) {
+        if (this.grid[i][y] === 'wall') {
+          if ((y >= pos.x && y <= pos.x + size.x) && (i >= pos.y && y <= pos.y + size.y)) return 'wall';
+        } else if (this.grid[i][y] === 'lava') {
+          if ((y >= pos.x && y <= pos.x + size.x) && (i >= pos.y && y <= pos.y + size.y)) return 'lava';
+        }
+      }
+    }
+    return undefined;
+  }
+
+  removeActor(actor) {
+    let find = this.actors.findIndex(function (el) {
+      return el === actor;
+    });
+    if (find !== -1) this.actors.splice(find, 1);
+  }
+
+  noMoreActors(obgType) {
+    if (!this.actors) return true;
+    let find = this.actors.findIndex(function (el) {
+      if (el.type === obgType) return el;
+    });
+    if (find === -1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  playerTouched(type, actor) {
+    if (this.status !== null) return;
+    if (type === 'lava' || type === 'fireball') this.status = 'lost';
+    if (type === 'coin') {
+      this.removeActor(actor);
+      if (this.noMoreActors('coin')) this.status = 'won';
+    }
+
   }
 }
 
