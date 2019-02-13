@@ -129,14 +129,12 @@ class Level {
     } else if (size.constructor.name !== 'Vector') {
       throw new Error("size не типа Vector");
     }
-    if (pos.y + size.y > this.height) return 'lava';
-    if (pos.x + size.x > this.width || pos.y < 0 || pos.x < 0 || (pos.x + size.x) * (pos.y + size.y) > this.height * this.width) return 'wall';
-    for (let i = 0 ; i < this.grid.length ; i++) {
-      for (let j = 0 ; j < this.grid[i].length ; j++) {
-        if (this.grid[i][j] === 'wall') {
-          if ((j >= pos.x && j <= pos.x + size.x) && (i >= pos.y && j <= pos.y + size.y)) return 'wall';
-        } else if (this.grid[i][j] === 'lava') {
-          if ((j >= pos.x && j <= pos.x + size.x) && (i >= pos.y && j <= pos.y + size.y)) return 'lava';
+    if ((pos.y + size.y) > this.height) return 'lava';
+    if (pos.x + size.x > this.width || pos.y < 0 || pos.x < 0) return 'wall';
+    for (let i = Math.floor(pos.x); i < Math.ceil(pos.x + size.x); i++) {
+      for (let j = Math.floor(pos.y); j < Math.ceil(pos.y + size.y); j++) {
+        if ((this.grid[j][i] == 'lava') || (this.grid[j][i] == 'wall')) {
+          return this.grid[j][i];
         }
       }
     }
@@ -191,17 +189,18 @@ class LevelParser {
 
   obstacleFromSymbol(symbol) {
     if (symbol === 'x') {
-      return 'wall';
+        return 'wall';
     } else if (symbol === '!') {
-      return 'lava';
+        return 'lava';
     } else {
-      return undefined;
+        return undefined;
     }
-  }
+}
 
   createGrid(arr) {
     return arr.map( (arrEl) => { return arrEl.split('').map( (el) => { return this.obstacleFromSymbol(el) }) })
-  }
+  }  
+
 
   createActors(arr) {
     let result = [];
@@ -290,7 +289,7 @@ class Fireball extends Actor {
   class FireRain extends Fireball {
     constructor(pos) {
       super(pos);
-      this.speed =  new Vector(0, 3);
+      this.speed = new Vector(0, 3);
       this.startPos = pos;
     }
 
@@ -336,5 +335,81 @@ class Fireball extends Actor {
 
   }
 
+
+  ////////////////////////////////////////
+
+  class Player extends Actor {
+    constructor(pos = new Vector(0,0)) {
+      super(...arguments);
+      this.pos  = new Vector(pos.x, pos.y - 0.5);
+      this.speed = new Vector(0, 0);
+      this.size = new Vector(0.8, 1.5);
+    }
+
+    get type() {
+      return 'player';
+    }
+  }
+
+
+  ////////////////////////////////////////
+
+  const schemas = [
+    [
+      '          o ',
+      '            ',
+      '         xxx',
+      '       =    ',
+      '       x  o ',
+      '            ',
+      ' @          ',
+      'xxx    !xxxx',
+      '         '
+    ],
+    [
+      '            ',
+      '   o        ',
+      '@         o ',
+      'xxx xxx     ',
+      '       =    ',
+      '          o ',
+      '          x ',
+      '            ',
+      '!!!!!!!!!!!!'
+    ],
+    [
+      '                   ',
+      '   o        v      ',
+      '                 o ',
+      'xxx   xxx          ',
+      '          =  o     ',
+      '   o               ',
+      '  xx             x ',
+      '         @       x ',
+      '         x       x ',
+      '             o   x ',
+      '!!!!!!!!!!!!!!!!!x!'
+    ],
+    [
+      '   v                   o    v',
+      '    o     =  o       |       ',
+      '            xxxx             ',
+      '@                      x  ooo',
+      'xxxxxxxxx         xxxxxxxxxxo',
+      '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    ]
+  ];
+
+  const actorDict = {
+    '@': Player,
+    'o': Coin,
+    '=': HorizontalFireball,
+    '|': VerticalFireball,
+    'v': FireRain
+  }
+  loadLevels();
+  const parser = new LevelParser(actorDict);
+  runGame(schemas, parser, DOMDisplay)
+    .then(() => console.log('Вы выиграли приз!'));
 
 
